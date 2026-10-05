@@ -12,6 +12,8 @@ A privacy-first document intelligence application for freelancers and small busi
 - Extract text without permanently saving uploaded documents
 - Refuse scanned documents when text cannot be verified
 - Display a limited document preview
+- Extract labeled invoice fields with page-level sources
+- Report missing fields as “Not found” instead of guessing
 
 ## Safety guardrails
 

@@ -1,9 +1,57 @@
-import fitz
+import re
+
+import pymupdf
 import streamlit as st
+
 
 MAX_FILE_SIZE_MB = 10
 MAX_PAGE_COUNT = 50
 MAX_PREVIEW_CHARACTERS = 5_000
+
+INVOICE_FIELDS = [
+    "Vendor",
+    "Customer",
+    "Invoice Number",
+    "Invoice Date",
+    "Due Date",
+    "Subtotal",
+    "Tax",
+    "Total Amount",
+    "Payment Terms",
+]
+
+
+def clean_extracted_value(value: str) -> str:
+    """Remove unnecessary whitespace and limit displayed field length."""
+
+    cleaned_value = " ".join(value.split())
+    return cleaned_value[:200]
+
+
+def find_labeled_field(pages: list[dict], label: str) -> dict:
+    """Find an exactly labeled field without guessing."""
+
+    pattern = re.compile(
+        rf"(?im)^\s*{re.escape(label)}\s*:\s*(.+?)\s*$"
+    )
+
+    for page_information in pages:
+        match = pattern.search(page_information["text"])
+
+        if match:
+            return {
+                "Field": label,
+                "Value": clean_extracted_value(match.group(1)),
+                "Source": f"Page {page_information['page_number']}",
+                "Method": "Exact label",
+            }
+
+    return {
+        "Field": label,
+        "Value": "Not found",
+        "Source": "—",
+        "Method": "Not guessed",
+    }
 
 
 def inspect_pdf(pdf_bytes: bytes):
@@ -13,7 +61,7 @@ def inspect_pdf(pdf_bytes: bytes):
         return None, "The uploaded file is not a valid PDF."
 
     try:
-        with fitz.open(stream=pdf_bytes, filetype="pdf") as document:
+        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as document:
             if document.needs_pass:
                 return None, "Password-protected PDFs are not supported."
 
@@ -23,25 +71,34 @@ def inspect_pdf(pdf_bytes: bytes):
             if document.page_count > MAX_PAGE_COUNT:
                 return None, (
                     f"The PDF contains {document.page_count} pages. "
-                    f"The current safety limit is {MAX_PAGE_COUNT} pages."
+                    f"The safety limit is {MAX_PAGE_COUNT} pages."
                 )
 
-            page_texts = []
+            pages = []
+            preview_sections = []
 
             for page_number, page in enumerate(document, start=1):
-                text = page.get_text("text").strip()
+                page_text = page.get_text("text").strip()
 
-                if text:
-                    page_texts.append(
-                        f"--- Page {page_number} ---\n{text}"
+                if page_text:
+                    pages.append(
+                        {
+                            "page_number": page_number,
+                            "text": page_text,
+                        }
                     )
 
-            complete_text = "\n\n".join(page_texts)
+                    preview_sections.append(
+                        f"--- Page {page_number} ---\n{page_text}"
+                    )
+
+            complete_text = "\n\n".join(preview_sections)
 
             result = {
                 "page_count": document.page_count,
                 "character_count": len(complete_text),
                 "text": complete_text,
+                "pages": pages,
             }
 
     except Exception:
@@ -109,6 +166,24 @@ if uploaded_file is not None:
                 f"{file_size_mb:.2f} MB",
             )
 
+            st.subheader("Invoice field extraction")
+
+            st.caption(
+                "Guardrail: Only exactly labeled fields are extracted. "
+                "Missing information is reported as “Not found.”"
+            )
+
+            extracted_fields = [
+                find_labeled_field(result["pages"], field)
+                for field in INVOICE_FIELDS
+            ]
+
+            st.dataframe(
+                extracted_fields,
+                use_container_width="stretch",
+                hide_index=True,
+            )
+
             st.subheader("Extracted text preview")
 
             preview = result["text"][:MAX_PREVIEW_CHARACTERS]
@@ -122,8 +197,7 @@ if uploaded_file is not None:
 
             if len(result["text"]) > MAX_PREVIEW_CHARACTERS:
                 st.caption(
-                    "Only the first 5,000 characters are displayed "
-                    "to keep the preview manageable."
+                    "Only the first 5,000 characters are displayed."
                 )
 
             st.warning(
