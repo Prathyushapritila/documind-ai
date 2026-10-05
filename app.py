@@ -1,81 +1,20 @@
 from invoice_extraction import (
     extract_invoice_fields,
 )
+from pdf_inspection import inspect_pdf
 
 
 
-import pymupdf
 import streamlit as st
 
 
 MAX_FILE_SIZE_MB = 10
-MAX_PAGE_COUNT = 50
 MAX_PREVIEW_CHARACTERS = 5_000
 
 
 
 
 
-def inspect_pdf(pdf_bytes: bytes):
-    """Safely inspect a PDF and extract readable text."""
-
-    if not pdf_bytes.startswith(b"%PDF-"):
-        return None, "The uploaded file is not a valid PDF."
-
-    try:
-        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as document:
-            if document.needs_pass:
-                return None, "Password-protected PDFs are not supported."
-
-            if document.page_count == 0:
-                return None, "The PDF does not contain any pages."
-
-            if document.page_count > MAX_PAGE_COUNT:
-                return None, (
-                    f"The PDF contains {document.page_count} pages. "
-                    f"The safety limit is {MAX_PAGE_COUNT} pages."
-                )
-
-            pages = []
-            preview_sections = []
-
-            for page_number, page in enumerate(document, start=1):
-                page_text = page.get_text("text").strip()
-
-                if page_text:
-                    pages.append(
-                        {
-                            "page_number": page_number,
-                            "text": page_text,
-                        }
-                    )
-
-                    preview_sections.append(
-                        f"--- Page {page_number} ---\n{page_text}"
-                    )
-
-            complete_text = "\n\n".join(preview_sections)
-
-            result = {
-                "page_count": document.page_count,
-                "character_count": len(complete_text),
-                "text": complete_text,
-                "pages": pages,
-            }
-
-    except Exception:
-        return None, (
-            "DocuMind could not safely read this PDF. "
-            "The file may be damaged or use an unsupported format."
-        )
-
-    if not result["text"]:
-        return None, (
-            "No readable text was found. This may be a scanned document. "
-            "Image-based OCR will be added in a later version."
-        )
-
-    return result, None
 
 
 st.set_page_config(
