@@ -1,4 +1,8 @@
-import re
+from invoice_extraction import (
+    extract_invoice_fields,
+)
+
+
 
 import pymupdf
 import streamlit as st
@@ -173,14 +177,12 @@ if uploaded_file is not None:
                 "Missing information is reported as “Not found.”"
             )
 
-            extracted_fields = [
-                find_labeled_field(result["pages"], field)
-                for field in INVOICE_FIELDS
-            ]
+            extracted_fields = extract_invoice_fields(result["pages"])
+            
 
             st.dataframe(
                 extracted_fields,
-                use_container_width="stretch",
+                width="stretch",
                 hide_index=True,
             )
 
