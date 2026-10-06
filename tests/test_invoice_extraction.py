@@ -55,6 +55,23 @@ class InvoiceExtractionTests(unittest.TestCase):
         self.assertEqual(len(result["Value"]), 200)
         self.assertEqual(result["Source"], "Page 2")
 
+    def test_extracts_approved_alias_with_source(self):
+        pages = [
+            {
+                "page_number": 3,
+                "text": "Grand Total: $725.00",
+            }
+        ]
 
+        results = extract_invoice_fields(pages)
+        total = next(
+            item
+            for item in results
+            if item["Field"] == "Total Amount"
+        )
+
+        self.assertEqual(total["Value"], "$725.00")
+        self.assertEqual(total["Source"], "Page 3")
+        self.assertEqual(total["Method"], "Approved alias")
 if __name__ == "__main__":
     unittest.main()

@@ -73,7 +73,7 @@ if uploaded_file is not None:
             st.subheader("Invoice field extraction")
 
             st.caption(
-                "Guardrail: Only exactly labeled fields are extracted. "
+                "Guardrail: Only approved labels and aliases are extracted. "
                 "Missing information is reported as “Not found.”"
             )
 
