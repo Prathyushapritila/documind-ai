@@ -4,6 +4,7 @@ from invoice_extraction import (
     extract_invoice_fields,
 )
 from pdf_inspection import inspect_pdf
+from report_export import build_csv_report
 
 
 
@@ -84,8 +85,16 @@ if uploaded_file is not None:
                 width="stretch",
                 hide_index=True,
             )
-            st.subheader("Ask this document")
 
+            report_csv = build_csv_report(extracted_fields)
+
+            st.download_button(
+                label="Download verified CSV report",
+                data=report_csv,
+                file_name="documind_invoice_report.csv",
+                mime="text/csv",
+            )
+            st.subheader("Ask this document")
             st.caption(
                 "Answers use only matching evidence from the uploaded document. "
                 "Unsupported answers are reported as “Not found in the document.”"
