@@ -5,6 +5,9 @@ A privacy-first document assistant for freelancers and small businesses.
 DocuMind AI reads PDF invoices, validates them for safe processing, extracts verified fields with page-level sources, answers supported questions, and creates downloadable CSV reports.
 
 > **Current implementation:** This version uses deterministic, evidence-based document processing. It does not yet use a large language model or external AI API.
+## Application preview
+
+![DocuMind AI answering an invoice question with document evidence](assets/documind-demo.png)
 
 ## Features
 
