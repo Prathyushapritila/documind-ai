@@ -1,5 +1,7 @@
 # DocuMind AI
 
+[![Tests](https://github.com/Prathyushapritila/documind-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/Prathyushapritila/documind-ai/actions/workflows/tests.yml)
+
 A privacy-first document assistant for freelancers and small businesses.
 
 DocuMind AI reads PDF invoices, validates them for safe processing, extracts verified fields with page-level sources, answers supported questions, and creates downloadable CSV reports.
