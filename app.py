@@ -1,3 +1,5 @@
+from document_search import search_document
+
 from invoice_extraction import (
     extract_invoice_fields,
 )
@@ -82,7 +84,32 @@ if uploaded_file is not None:
                 width="stretch",
                 hide_index=True,
             )
+            st.subheader("Ask this document")
 
+            st.caption(
+                "Answers use only matching evidence from the uploaded document. "
+                "Unsupported answers are reported as “Not found in the document.”"
+            )
+
+            question = st.text_input(
+                "Your question",
+                placeholder="What is the total amount?",
+            )
+
+            if question:
+                search_result = search_document(result["pages"], question)
+
+                if search_result["status"] == "found":
+                    st.success(search_result["answer"])
+                    st.caption(
+                        f"Source: {search_result['source']} · "
+                        f"Method: {search_result['method']}"
+                    )
+
+                    with st.expander("View supporting evidence"):
+                        st.write(search_result["evidence"])
+                else:
+                    st.warning("Not found in the document.")
             st.subheader("Extracted text preview")
 
             preview = result["text"][:MAX_PREVIEW_CHARACTERS]
